@@ -58,7 +58,7 @@ for y in woman_occurrences.keys():
 # Plot data
 plt.figure(figsize=(11, 10)).tight_layout()
 plt.subplot(221)
-plt.plot(woman_occurrences.keys(), woman_occurrences.values())
+plt.plot(woman_occurrences.keys(), woman_occurrences.values(), color="red")
 plt.xlabel("years")
 plt.ylabel("occurrences")
 plt.title("Woman")
@@ -68,13 +68,18 @@ plt.xlabel("years")
 plt.ylabel("occurrences")
 plt.title("Man")
 plt.subplot(223)
-plt.plot(woman_occurrences.keys(), ratios)
+plt.plot(woman_occurrences.keys(), woman_occurrences.values(), color="red")
+plt.plot(woman_occurrences.keys(), man_occurrences.values())
+plt.xlabel("years")
+plt.ylabel("occurrences")
+plt.title("Man and Womand")
+plt.subplot(224)
+plt.plot(woman_occurrences.keys(), ratios, color="purple")
 plt.xlabel("years")
 plt.ylabel("ratio")
 plt.title("Ratio man-woman")
 
 plt.show()
-
 
 
 
