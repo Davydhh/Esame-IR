@@ -132,10 +132,12 @@ ratios = get_ratio(woman_occurrences, man_occurrences)
 ## Word Embeddings
 # Word2Vec
 
+training_data_per_year = defaultdict(lambda: [])
 training_data = []
 for d in data:
     sentences = nltk.tokenize.sent_tokenize(d["text"])
     text = [[token.lemma_.lower() for token in nlp(s)] for s in sentences]
+    training_data_per_year[d["year"]].extend(text)
     training_data.extend(text)
 
 model = Word2Vec(training_data, sg=1)
@@ -153,6 +155,8 @@ def get_most_similar(dictionary, model):
 
 woman_most_similar = get_most_similar(woman_dict, model)
 man_most_similar = get_most_similar(man_dict, model)
+
+print(woman_most_similar)
 
 
 
