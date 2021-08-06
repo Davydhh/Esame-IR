@@ -1,10 +1,12 @@
 import spacy
 import math
+import nltk
 import matplotlib.pyplot as plt
 
 from collections import defaultdict
 from pymongo import MongoClient
 from nltk.corpus import wordnet
+from gensim.models import Word2Vec
 
 # Get data from mongodb
 client = MongoClient()
@@ -14,13 +16,14 @@ data = list(collection.find(sort=[("year", 1)]))
 
 # Tokenize and lemmatize corpus
 nlp = spacy.load("en_core_web_sm")
+parsed_data = []
 for d in data:
-    text = d["text"]
-    d["text"] = [token.lemma_.lower() for token in nlp(text)]
+    text = [token.lemma_.lower() for token in nlp(d["text"])]
+    parsed_data.append({"_id": d["_id"], "text": text, "pope": d["pope"], "year": int(d["year"])})
 
 # Create dictionaries about man and woman words
-woman_dict = ["female", "girl", "woman", "she", "sister", "mrs"]
-man_dict = ["male", "boy", "man", "he", "brother", "mr"]
+woman_dict = ["female", "girl", "woman", "she", "sister", "mother", "mrs", "her", "lady", "nun"]
+man_dict = ["male", "boy", "man", "he", "brother", "father", "mr", "his", "priest"]
 
 def get_syns(dictionary):
     result = set()
@@ -41,13 +44,13 @@ def count_words(data, dictionary, with_freq=False):
             text = d["text"]
             count = text.count(w)
             if not with_freq:
-                counter[int(d["year"])] += count
+                counter[d["year"]] += count
             else:
-                counter[int(d["year"])] += abs(math.log(count / len(set(text)))) if count != 0 else 0
+                counter[d["year"]] += abs(math.log(count / len(set(text)))) if count != 0 else 0
     return counter
 
-woman_occurrences = count_words(data, woman_dict)
-man_occurrences = count_words(data, man_dict)
+woman_occurrences = count_words(parsed_data, woman_dict)
+man_occurrences = count_words(parsed_data, man_dict)
 
 def my_div(n, d):
     return n / d if d else n
@@ -92,10 +95,10 @@ plt.suptitle("Basic occurrences counter")
 
 ### Language Models
 ## Basics
-# Unigram with relative frequency
+# Log probabilities
 
-woman_occurrences = count_words(data, woman_dict, with_freq=True)
-man_occurrences = count_words(data, man_dict, with_freq=True)
+woman_occurrences = count_words(parsed_data, woman_dict, with_freq=True)
+man_occurrences = count_words(parsed_data, man_dict, with_freq=True)
 
 ratios = get_ratio(woman_occurrences, man_occurrences)
 
@@ -125,6 +128,38 @@ plt.title("Ratio man-woman")
 plt.suptitle("Occurrences with relative frequency")
 
 # plt.show()
+
+## Word Embeddings
+# Word2Vec
+
+training_data = []
+for d in data:
+    sentences = nltk.tokenize.sent_tokenize(d["text"])
+    text = [[token.lemma_.lower() for token in nlp(s)] for s in sentences]
+    training_data.extend(text)
+
+model = Word2Vec(training_data, sg=1)
+
+woman_most_similar = []
+for word in woman_dict:
+    try:
+        similars = model.wv.most_similar(positive=word)
+        woman_most_similar.extend([w[0] for w in similars])
+    except KeyError:
+        pass
+
+print(woman_most_similar)
+
+
+
+
+
+
+
+
+
+
+
 
 
 
