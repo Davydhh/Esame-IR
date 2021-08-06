@@ -69,29 +69,29 @@ def get_ratio(woman_occurrences, man_occurrences):
 ratios = get_ratio(woman_occurrences, man_occurrences)
 
 # Plot data
-plt.figure(figsize=(11, 10)).tight_layout()
-plt.subplot(221)
-plt.plot(woman_occurrences.keys(), woman_occurrences.values(), color="red")
-plt.xlabel("years")
-plt.ylabel("occurrences")
-plt.title("Woman")
-plt.subplot(222)
-plt.plot(man_occurrences.keys(), man_occurrences.values())
-plt.xlabel("years")
-plt.ylabel("occurrences")
-plt.title("Man")
-plt.subplot(223)
-plt.plot(woman_occurrences.keys(), woman_occurrences.values(), color="red")
-plt.plot(woman_occurrences.keys(), man_occurrences.values())
-plt.xlabel("years")
-plt.ylabel("occurrences")
-plt.title("Man and Womand")
-plt.subplot(224)
-plt.plot(woman_occurrences.keys(), ratios, color="purple")
-plt.xlabel("years")
-plt.ylabel("ratio")
-plt.title("Ratio man-woman")
-plt.suptitle("Basic occurrences counter")
+# plt.figure(figsize=(11, 10)).tight_layout()
+# plt.subplot(221)
+# plt.plot(woman_occurrences.keys(), woman_occurrences.values(), color="red")
+# plt.xlabel("years")
+# plt.ylabel("occurrences")
+# plt.title("Woman")
+# plt.subplot(222)
+# plt.plot(man_occurrences.keys(), man_occurrences.values())
+# plt.xlabel("years")
+# plt.ylabel("occurrences")
+# plt.title("Man")
+# plt.subplot(223)
+# plt.plot(woman_occurrences.keys(), woman_occurrences.values(), color="red")
+# plt.plot(woman_occurrences.keys(), man_occurrences.values())
+# plt.xlabel("years")
+# plt.ylabel("occurrences")
+# plt.title("Man and Womand")
+# plt.subplot(224)
+# plt.plot(woman_occurrences.keys(), ratios, color="purple")
+# plt.xlabel("years")
+# plt.ylabel("ratio")
+# plt.title("Ratio man-woman")
+# plt.suptitle("Basic occurrences counter")
 
 ### Language Models
 ## Basics
@@ -103,29 +103,29 @@ man_occurrences = count_words(parsed_data, man_dict, with_freq=True)
 ratios = get_ratio(woman_occurrences, man_occurrences)
 
 # Plot data
-plt.figure(figsize=(11, 10)).tight_layout()
-plt.subplot(221)
-plt.plot(woman_occurrences.keys(), woman_occurrences.values(), color="red")
-plt.xlabel("years")
-plt.ylabel("occurrences")
-plt.title("Woman")
-plt.subplot(222)
-plt.plot(man_occurrences.keys(), man_occurrences.values())
-plt.xlabel("years")
-plt.ylabel("occurrences")
-plt.title("Man")
-plt.subplot(223)
-plt.plot(woman_occurrences.keys(), woman_occurrences.values(), color="red")
-plt.plot(woman_occurrences.keys(), man_occurrences.values())
-plt.xlabel("years")
-plt.ylabel("occurrences")
-plt.title("Man and Womand")
-plt.subplot(224)
-plt.plot(woman_occurrences.keys(), ratios, color="purple")
-plt.xlabel("years")
-plt.ylabel("ratio")
-plt.title("Ratio man-woman")
-plt.suptitle("Occurrences with relative frequency")
+# plt.figure(figsize=(11, 10)).tight_layout()
+# plt.subplot(221)
+# plt.plot(woman_occurrences.keys(), woman_occurrences.values(), color="red")
+# plt.xlabel("years")
+# plt.ylabel("occurrences")
+# plt.title("Woman")
+# plt.subplot(222)
+# plt.plot(man_occurrences.keys(), man_occurrences.values())
+# plt.xlabel("years")
+# plt.ylabel("occurrences")
+# plt.title("Man")
+# plt.subplot(223)
+# plt.plot(woman_occurrences.keys(), woman_occurrences.values(), color="red")
+# plt.plot(woman_occurrences.keys(), man_occurrences.values())
+# plt.xlabel("years")
+# plt.ylabel("occurrences")
+# plt.title("Man and Womand")
+# plt.subplot(224)
+# plt.plot(woman_occurrences.keys(), ratios, color="purple")
+# plt.xlabel("years")
+# plt.ylabel("ratio")
+# plt.title("Ratio man-woman")
+# plt.suptitle("Occurrences with relative frequency")
 
 # plt.show()
 
@@ -140,15 +140,19 @@ for d in data:
 
 model = Word2Vec(training_data, sg=1)
 
-woman_most_similar = []
-for word in woman_dict:
-    try:
-        similars = model.wv.most_similar(positive=word)
-        woman_most_similar.extend([w[0] for w in similars])
-    except KeyError:
-        pass
+def get_most_similar(dictionary, model):
+    most_similar = {}
+    for word in dictionary:
+        try:
+            similars = model.wv.most_similar(positive=word)
+            most_similar[word] = [w[0] for w in similars]
+        except KeyError:
+            pass
 
-print(woman_most_similar)
+    return most_similar
+
+woman_most_similar = get_most_similar(woman_dict, model)
+man_most_similar = get_most_similar(man_dict, model)
 
 
 
