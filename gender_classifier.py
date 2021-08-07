@@ -10,7 +10,7 @@ from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import train_test_split
 
-df = pd.read_csv("name_gender_dataset.csv").drop(["Count", "Probability"], axis=1)
+df = pd.read_csv("NationalNames.csv").drop(["Id", "Year", "Count"], axis=1)
 
 x = df["Name"]
 y = df["Gender"]
@@ -22,7 +22,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random
 
 models = {
     'Logistic Regression': LogisticRegression(),
-    'Support Vector Machine': SVC(max_iter=1000),
+    'Support Vector Machine': SVC(),
     'Multinomial Naive Bayes': MultinomialNB(),
     'Decision Tree': DecisionTreeClassifier(),
     'Random Forest': RandomForestClassifier(),

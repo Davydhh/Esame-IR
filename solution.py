@@ -1,12 +1,15 @@
 import spacy
 import math
+import nltk
 import pickle
 import matplotlib.pyplot as plt
+import pandas as pd
 
 from collections import defaultdict
 from pymongo import MongoClient
 from nltk.corpus import wordnet
 from gensim.models import Word2Vec
+from sklearn.feature_extraction.text import CountVectorizer
 
 # Get data from mongodb
 client = MongoClient()
@@ -93,84 +96,103 @@ plt.ylabel("ratio")
 plt.title("Ratio man-woman")
 plt.suptitle("Basic occurrences counter")
 
-# Named Entity Recognition
-names = list({ent.text for d in data for ent in nlp(d["text"]).ents if ent.label_ == "PERSON"})
+### Language Models
+## Basics
+# Log probabilities
 
-model = pickle.load(open("Logistic Regression.sav", 'rb'))
+woman_occurrences = count_words(parsed_data, woman_dict, with_freq=True)
+man_occurrences = count_words(parsed_data, man_dict, with_freq=True)
 
+ratios = get_ratio(woman_occurrences, man_occurrences)
 
-# ### Language Models
-# ## Basics
-# # Log probabilities
+# Plot data
+plt.figure(figsize=(11, 10)).tight_layout()
+plt.subplot(221)
+plt.plot(woman_occurrences.keys(), woman_occurrences.values(), color="red")
+plt.xlabel("years")
+plt.ylabel("occurrences")
+plt.title("Woman")
+plt.subplot(222)
+plt.plot(man_occurrences.keys(), man_occurrences.values())
+plt.xlabel("years")
+plt.ylabel("occurrences")
+plt.title("Man")
+plt.subplot(223)
+plt.plot(woman_occurrences.keys(), woman_occurrences.values(), color="red")
+plt.plot(woman_occurrences.keys(), man_occurrences.values())
+plt.xlabel("years")
+plt.ylabel("occurrences")
+plt.title("Man and Womand")
+plt.subplot(224)
+plt.plot(woman_occurrences.keys(), ratios, color="purple")
+plt.xlabel("years")
+plt.ylabel("ratio")
+plt.title("Ratio man-woman")
+plt.suptitle("Occurrences with relative frequency")
 
-# woman_occurrences = count_words(parsed_data, woman_dict, with_freq=True)
-# man_occurrences = count_words(parsed_data, man_dict, with_freq=True)
-
-# ratios = get_ratio(woman_occurrences, man_occurrences)
-
-# # Plot data
-# plt.figure(figsize=(11, 10)).tight_layout()
-# plt.subplot(221)
-# plt.plot(woman_occurrences.keys(), woman_occurrences.values(), color="red")
-# plt.xlabel("years")
-# plt.ylabel("occurrences")
-# plt.title("Woman")
-# plt.subplot(222)
-# plt.plot(man_occurrences.keys(), man_occurrences.values())
-# plt.xlabel("years")
-# plt.ylabel("occurrences")
-# plt.title("Man")
-# plt.subplot(223)
-# plt.plot(woman_occurrences.keys(), woman_occurrences.values(), color="red")
-# plt.plot(woman_occurrences.keys(), man_occurrences.values())
-# plt.xlabel("years")
-# plt.ylabel("occurrences")
-# plt.title("Man and Womand")
-# plt.subplot(224)
-# plt.plot(woman_occurrences.keys(), ratios, color="purple")
-# plt.xlabel("years")
-# plt.ylabel("ratio")
-# plt.title("Ratio man-woman")
-# plt.suptitle("Occurrences with relative frequency")
-
-# # plt.show()
+# plt.show()
 
 # ## Word Embeddings
 # # Word2Vec
 
-# training_data_per_year = defaultdict(lambda: [])
-# training_data = []
-# for d in data:
-#     sentences = nltk.tokenize.sent_tokenize(d["text"])
-#     text = [[token.lemma_.lower() for token in nlp(s)] for s in sentences]
-#     training_data_per_year[d["year"]].extend(text)
-#     training_data.extend(text)
+training_data_per_year = defaultdict(lambda: [])
+training_data = []
+for d in data:
+    sentences = nltk.tokenize.sent_tokenize(d["text"])
+    text = [[token.lemma_.lower() for token in nlp(s)] for s in sentences]
+    training_data_per_year[d["year"]].extend(text)
+    training_data.extend(text)
 
-# model = Word2Vec(training_data, sg=1)
+model = Word2Vec(training_data, sg=1)
 
-# def get_most_similar(dictionary, model):
-#     most_similar = {}
-#     for word in dictionary:
-#         try:
-#             similars = model.wv.most_similar(positive=word)
-#             most_similar[word] = [w[0] for w in similars]
-#         except KeyError:
-#             pass
+def get_most_similar(dictionary, model):
+    most_similar = {}
+    for word in dictionary:
+        try:
+            similars = model.wv.most_similar(positive=word)
+            most_similar[word] = similars[0][0]
+        except KeyError:
+            pass
 
-#     return most_similar
+    return most_similar
 
-# woman_most_similar = get_most_similar(woman_dict, model)
-# man_most_similar = get_most_similar(man_dict, model)
+woman_most_similar = get_most_similar(woman_dict, model)
+man_most_similar = get_most_similar(man_dict, model)
 
-# # create one model for each year
-# for k, v in training_data_per_year.items():
-#     model = Word2Vec(v, sg=1)
-#     woman_most_similar = get_most_similar(woman_dict, model)
-#     man_most_similar = get_most_similar(man_dict, model)
-#     # print("For the year {} the woman dict is {} and the man dict is {}".format(k, woman_most_similar, man_most_similar), '\n')
+# Named Entity Recognition
+names = list({ent.text for d in data for ent in nlp(d["text"]).ents if ent.label_ == "PERSON"})
 
+for i, name in enumerate(names):
+    if " " in name:
+        words = name.split()
+        names[i] = words[0]
 
+df = pd.read_csv("NationalNames.csv").drop(["Id", "Year", "Count"], axis=1)
 
+x = df["Name"]
+cv = CountVectorizer().fit(x)
+
+gender_model = pickle.load(open("Logistic Regression.sav", 'rb'))
+
+prediction = gender_model.predict(cv.transform(names).toarray())
+
+male_names = [names[i].lower() for i, p in enumerate(prediction) if p == "M"]
+female_names = [names[i].lower() for i, p in enumerate(prediction) if p == "F"]
+
+female_names_most_similar = get_most_similar(female_names, model)
+male_names_most_similar = get_most_similar(male_names, model)
+
+print(woman_most_similar, '\n')
+print(man_most_similar, '\n')
+print(female_names_most_similar, '\n')
+print(male_names_most_similar, '\n')
+
+# create one model for each year
+for k, v in training_data_per_year.items():
+    model = Word2Vec(v, sg=1)
+    woman_most_similar = get_most_similar(woman_dict, model)
+    man_most_similar = get_most_similar(man_dict, model)
+    print("For the year {} the woman dict is {} and the man dict is {}".format(k, woman_most_similar, man_most_similar), '\n')
 
 
 
