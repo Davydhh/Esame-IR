@@ -1,6 +1,6 @@
 import spacy
 import math
-import nltk
+import pickle
 import matplotlib.pyplot as plt
 
 from collections import defaultdict
@@ -22,8 +22,8 @@ for d in data:
     parsed_data.append({"_id": d["_id"], "text": text, "pope": d["pope"], "year": int(d["year"])})
 
 # Create dictionaries about man and woman words
-woman_dict = ["female", "girl", "woman", "she", "sister", "mother", "mrs", "her", "lady", "nun"]
-man_dict = ["male", "boy", "man", "he", "brother", "father", "mr", "his", "priest"]
+woman_dict = ["female", "girl", "woman", "she", "sister", "mother", "mrs", "her", "nun", "daughter", "lady"]
+man_dict = ["male", "boy", "man", "he", "brother", "father", "mr", "his", "priest", "son"]
 
 def get_syns(dictionary):
     result = set()
@@ -69,40 +69,46 @@ def get_ratio(woman_occurrences, man_occurrences):
 ratios = get_ratio(woman_occurrences, man_occurrences)
 
 # Plot data
-# plt.figure(figsize=(11, 10)).tight_layout()
-# plt.subplot(221)
-# plt.plot(woman_occurrences.keys(), woman_occurrences.values(), color="red")
-# plt.xlabel("years")
-# plt.ylabel("occurrences")
-# plt.title("Woman")
-# plt.subplot(222)
-# plt.plot(man_occurrences.keys(), man_occurrences.values())
-# plt.xlabel("years")
-# plt.ylabel("occurrences")
-# plt.title("Man")
-# plt.subplot(223)
-# plt.plot(woman_occurrences.keys(), woman_occurrences.values(), color="red")
-# plt.plot(woman_occurrences.keys(), man_occurrences.values())
-# plt.xlabel("years")
-# plt.ylabel("occurrences")
-# plt.title("Man and Womand")
-# plt.subplot(224)
-# plt.plot(woman_occurrences.keys(), ratios, color="purple")
-# plt.xlabel("years")
-# plt.ylabel("ratio")
-# plt.title("Ratio man-woman")
-# plt.suptitle("Basic occurrences counter")
+plt.figure(figsize=(11, 10)).tight_layout()
+plt.subplot(221)
+plt.plot(woman_occurrences.keys(), woman_occurrences.values(), color="red")
+plt.xlabel("years")
+plt.ylabel("occurrences")
+plt.title("Woman")
+plt.subplot(222)
+plt.plot(man_occurrences.keys(), man_occurrences.values())
+plt.xlabel("years")
+plt.ylabel("occurrences")
+plt.title("Man")
+plt.subplot(223)
+plt.plot(woman_occurrences.keys(), woman_occurrences.values(), color="red")
+plt.plot(woman_occurrences.keys(), man_occurrences.values())
+plt.xlabel("years")
+plt.ylabel("occurrences")
+plt.title("Man and Womand")
+plt.subplot(224)
+plt.plot(woman_occurrences.keys(), ratios, color="purple")
+plt.xlabel("years")
+plt.ylabel("ratio")
+plt.title("Ratio man-woman")
+plt.suptitle("Basic occurrences counter")
 
-### Language Models
-## Basics
-# Log probabilities
+# Named Entity Recognition
+names = list({ent.text for d in data for ent in nlp(d["text"]).ents if ent.label_ == "PERSON"})
 
-woman_occurrences = count_words(parsed_data, woman_dict, with_freq=True)
-man_occurrences = count_words(parsed_data, man_dict, with_freq=True)
+model = pickle.load(open("Logistic Regression.sav", 'rb'))
 
-ratios = get_ratio(woman_occurrences, man_occurrences)
 
-# Plot data
+# ### Language Models
+# ## Basics
+# # Log probabilities
+
+# woman_occurrences = count_words(parsed_data, woman_dict, with_freq=True)
+# man_occurrences = count_words(parsed_data, man_dict, with_freq=True)
+
+# ratios = get_ratio(woman_occurrences, man_occurrences)
+
+# # Plot data
 # plt.figure(figsize=(11, 10)).tight_layout()
 # plt.subplot(221)
 # plt.plot(woman_occurrences.keys(), woman_occurrences.values(), color="red")
@@ -127,36 +133,41 @@ ratios = get_ratio(woman_occurrences, man_occurrences)
 # plt.title("Ratio man-woman")
 # plt.suptitle("Occurrences with relative frequency")
 
-# plt.show()
+# # plt.show()
 
-## Word Embeddings
-# Word2Vec
+# ## Word Embeddings
+# # Word2Vec
 
-training_data_per_year = defaultdict(lambda: [])
-training_data = []
-for d in data:
-    sentences = nltk.tokenize.sent_tokenize(d["text"])
-    text = [[token.lemma_.lower() for token in nlp(s)] for s in sentences]
-    training_data_per_year[d["year"]].extend(text)
-    training_data.extend(text)
+# training_data_per_year = defaultdict(lambda: [])
+# training_data = []
+# for d in data:
+#     sentences = nltk.tokenize.sent_tokenize(d["text"])
+#     text = [[token.lemma_.lower() for token in nlp(s)] for s in sentences]
+#     training_data_per_year[d["year"]].extend(text)
+#     training_data.extend(text)
 
-model = Word2Vec(training_data, sg=1)
+# model = Word2Vec(training_data, sg=1)
 
-def get_most_similar(dictionary, model):
-    most_similar = {}
-    for word in dictionary:
-        try:
-            similars = model.wv.most_similar(positive=word)
-            most_similar[word] = [w[0] for w in similars]
-        except KeyError:
-            pass
+# def get_most_similar(dictionary, model):
+#     most_similar = {}
+#     for word in dictionary:
+#         try:
+#             similars = model.wv.most_similar(positive=word)
+#             most_similar[word] = [w[0] for w in similars]
+#         except KeyError:
+#             pass
 
-    return most_similar
+#     return most_similar
 
-woman_most_similar = get_most_similar(woman_dict, model)
-man_most_similar = get_most_similar(man_dict, model)
+# woman_most_similar = get_most_similar(woman_dict, model)
+# man_most_similar = get_most_similar(man_dict, model)
 
-print(woman_most_similar)
+# # create one model for each year
+# for k, v in training_data_per_year.items():
+#     model = Word2Vec(v, sg=1)
+#     woman_most_similar = get_most_similar(woman_dict, model)
+#     man_most_similar = get_most_similar(man_dict, model)
+#     # print("For the year {} the woman dict is {} and the man dict is {}".format(k, woman_most_similar, man_most_similar), '\n')
 
 
 
