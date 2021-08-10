@@ -40,7 +40,7 @@ def get_syns(dictionary):
 woman_dict.extend(get_syns(woman_dict))
 man_dict.extend(get_syns(man_dict))
 
-# Count words occurrences
+# Count words occurrences also with Laplace smoothing
 def count_words(data, dictionary, with_freq=False):
     counter = defaultdict(lambda: 0)
     for d in data:
@@ -50,7 +50,7 @@ def count_words(data, dictionary, with_freq=False):
             if not with_freq:
                 counter[d["year"]] += count
             else:
-                counter[d["year"]] += abs(math.log(count / len(set(text)))) if count != 0 else 0
+                counter[d["year"]] += math.log((count + 1) / (len(text) + len(set(text))))
     return counter
 
 woman_occurrences = count_words(parsed_data, woman_dict)
@@ -99,7 +99,7 @@ plt.suptitle("Basic occurrences counter")
 
 ### Language Models
 ## Basics
-# Log probabilities
+# Log probabilities with Laplace Smoothing
 
 woman_occurrences = count_words(parsed_data, woman_dict, with_freq=True)
 man_occurrences = count_words(parsed_data, man_dict, with_freq=True)
