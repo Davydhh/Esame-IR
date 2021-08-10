@@ -10,6 +10,7 @@ from pymongo import MongoClient
 from nltk.corpus import wordnet
 from gensim.models import Word2Vec
 from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.decomposition import PCA
 
 # Get data from mongodb
 client = MongoClient()
@@ -139,7 +140,7 @@ training_data_per_year = defaultdict(lambda: [])
 training_data = []
 for d in data:
     sentences = nltk.tokenize.sent_tokenize(d["text"])
-    text = [[token.lemma_.lower() for token in nlp(s)] for s in sentences]
+    text = [[token.lemma_ for token in nlp(s) if token.lemma_.isalpha()] for s in sentences]
     training_data_per_year[d["year"]].extend(text)
     training_data.extend(text)
 
@@ -149,8 +150,7 @@ def get_most_similar(dictionary, model):
     most_similar = {}
     for word in dictionary:
         try:
-            similars = model.wv.most_similar(positive=word)
-            most_similar[word] = similars[0][0]
+            most_similar[word] = [w[0] for w in model.wv.most_similar(positive=word, topn=3)]
         except KeyError:
             pass
 
@@ -158,6 +158,36 @@ def get_most_similar(dictionary, model):
 
 woman_most_similar = get_most_similar(woman_dict, model)
 man_most_similar = get_most_similar(man_dict, model)
+
+woman_df = pd.DataFrame.from_dict(woman_most_similar, orient="index")
+man_df = pd.DataFrame.from_dict(man_most_similar, orient="index")
+
+# Visualize Word Embeddings
+X = model.wv.vectors
+pca = PCA(n_components=2)
+result = pca.fit_transform(X)
+words = list(model.wv.index_to_key)
+
+def scatter_words(model, dictionary, result, words, suptitle, title):
+    for k, v in dictionary.items():
+        if v[0] in words:
+            index = model.wv.get_index(v[0])
+            plt.scatter(result[index, 0], result[index, 1], c="b", marker=',')
+            plt.annotate(v[0], xy=(result[index, 0], result[index, 1]))
+        if k in words:
+            index = model.wv.get_index(k)
+            plt.scatter(result[index, 0], result[index, 1], s=80, c='r')
+            plt.annotate(k, xy=(result[index, 0], result[index, 1]))
+    plt.suptitle(suptitle)
+    plt.title(title)
+
+plt.figure(figsize=(20, 10)).tight_layout()
+plt.subplot(121)
+scatter_words(model, woman_most_similar, result, words, "Word Embedding representation", "Woman words")
+plt.subplot(122)
+scatter_words(model, man_most_similar, result, words, "Word Embedding representation", "Man words")
+    
+plt.show()
 
 # Named Entity Recognition
 names = list({ent.text for d in data for ent in nlp(d["text"]).ents if ent.label_ == "PERSON"})
@@ -172,27 +202,30 @@ df = pd.read_csv("NationalNames.csv").drop(["Id", "Year", "Count"], axis=1)
 x = df["Name"]
 cv = CountVectorizer().fit(x)
 
-gender_model = pickle.load(open("Logistic Regression.sav", 'rb'))
+gender_model = pickle.load(open("Multinomial Naive Bayes.sav", 'rb'))
 
 prediction = gender_model.predict(cv.transform(names).toarray())
 
-male_names = [names[i].lower() for i, p in enumerate(prediction) if p == "M"]
-female_names = [names[i].lower() for i, p in enumerate(prediction) if p == "F"]
+male_names = [names[i] for i, p in enumerate(prediction) if p == "M"]
+female_names = [names[i] for i, p in enumerate(prediction) if p == "F"]
 
 female_names_most_similar = get_most_similar(female_names, model)
 male_names_most_similar = get_most_similar(male_names, model)
 
-print(woman_most_similar, '\n')
-print(man_most_similar, '\n')
-print(female_names_most_similar, '\n')
-print(male_names_most_similar, '\n')
+female_name_df = pd.DataFrame.from_dict(female_names_most_similar, orient="index")
+male_names_df = pd.DataFrame.from_dict(male_names_most_similar, orient="index")
+
+print(woman_df, '\n')
+print(man_df, '\n')
+print(female_name_df, '\n')
+print(male_names_df, '\n')
 
 # create one model for each year
-for k, v in training_data_per_year.items():
-    model = Word2Vec(v, sg=1)
-    woman_most_similar = get_most_similar(woman_dict, model)
-    man_most_similar = get_most_similar(man_dict, model)
-    print("For the year {} the woman dict is {} and the man dict is {}".format(k, woman_most_similar, man_most_similar), '\n')
+# for k, v in training_data_per_year.items():
+#     model = Word2Vec(v, sg=1)
+#     woman_most_similar = get_most_similar(woman_dict, model)
+#     man_most_similar = get_most_similar(man_dict, model)
+#     print("For the year {} the woman dict is {} and the man dict is {}".format(k, woman_most_similar, man_most_similar), '\n')
 
 
 
