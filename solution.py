@@ -73,7 +73,7 @@ def get_ratio(woman_occurrences, man_occurrences):
 ratios = get_ratio(woman_occurrences, man_occurrences)
 
 # Plot data
-plt.figure(figsize=(11, 10)).tight_layout()
+plt.figure().tight_layout()
 plt.subplot(221)
 plt.plot(woman_occurrences.keys(), woman_occurrences.values(), color="red")
 plt.xlabel("years")
@@ -100,14 +100,13 @@ plt.suptitle("Basic occurrences counter")
 ### Language Models
 ## Basics
 # Log probabilities with Laplace Smoothing
-
 woman_occurrences = count_words(parsed_data, woman_dict, with_freq=True)
 man_occurrences = count_words(parsed_data, man_dict, with_freq=True)
 
 ratios = get_ratio(woman_occurrences, man_occurrences)
 
 # Plot data
-plt.figure(figsize=(11, 10)).tight_layout()
+plt.figure().tight_layout()
 plt.subplot(221)
 plt.plot(woman_occurrences.keys(), woman_occurrences.values(), color="red")
 plt.xlabel("years")
@@ -133,9 +132,8 @@ plt.suptitle("Occurrences with relative frequency")
 
 # plt.show()
 
-# ## Word Embeddings
-# # Word2Vec
-
+## Word Embeddings
+# Word2Vec
 training_data_per_year = defaultdict(lambda: [])
 training_data = []
 for d in data:
@@ -181,7 +179,7 @@ def scatter_words(model, dictionary, result, words, suptitle, title):
     plt.suptitle(suptitle)
     plt.title(title)
 
-plt.figure(figsize=(20, 10)).tight_layout()
+plt.figure().tight_layout()
 plt.subplot(121)
 scatter_words(model, woman_most_similar, result, words, "Word Embedding representation", "Woman words")
 plt.subplot(122)
