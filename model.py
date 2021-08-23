@@ -33,7 +33,6 @@ class Model:
         return list(result)
 
     def count_words(self, dictionary, with_freq=False):
-        '''Count words occurrences also with Laplace smoothing'''
         counter = defaultdict(lambda: 0)
         for d in self.parsed_data:
             for w in dictionary:
@@ -42,6 +41,7 @@ class Model:
                 if not with_freq:
                     counter[d["year"]] += count
                 else:
+                    # Use Laplace smoothing
                     counter[d["year"]] += log((count + 1) / (len(text) + len(set(text))))
         return counter
 
@@ -121,9 +121,9 @@ class Model:
     def visualize_words(self, result, words):
         plt.figure().tight_layout()
         plt.subplot(121)
-        self.scatter_words(self.woman_most_similar, result, words, "Word Embedding representation", "Woman words")
+        self.scatter_words(self.woman_most_similar, result, words, "Word Embeddings representation", "Woman words")
         plt.subplot(122)
-        self.scatter_words(self.man_most_similar, result, words, "Word Embedding representation", "Man words")
+        self.scatter_words(self.man_most_similar, result, words, "Word Embeddings representation", "Man words")
             
         plt.show()
 
@@ -149,6 +149,39 @@ class Model:
 
         self.male_names = [self.names[i] for i, p in enumerate(prediction) if p == "M"]
         self.female_names = [self.names[i] for i, p in enumerate(prediction) if p == "F"]
+
+    def word_embeddings(self):
+        training_data = self.generate_training_data()
+        self.model = Word2Vec(training_data, sg=1)
+        
+        self.woman_most_similar = self.get_most_similar(self.woman_dict)
+        self.man_most_similar = self.get_most_similar(self.man_dict)
+
+        woman_df = pd.DataFrame.from_dict(self.woman_most_similar, orient="index")
+        man_df = pd.DataFrame.from_dict(self.man_most_similar, orient="index")
+
+        # Visualize Word Embeddings
+        X = self.model.wv.vectors
+        pca = PCA(n_components=2)
+        result = pca.fit_transform(X)
+        words = list(self.model.wv.index_to_key)
+
+        self.visualize_words(result, words)
+
+        # Named Entity Recognition
+        self.get_names()
+        self.get_gender_names()
+
+        self.female_name_most_similar = self.get_most_similar(self.female_names)
+        self.male_name_most_similar = self.get_most_similar(self.male_names)
+
+        female_name_df = pd.DataFrame.from_dict(self.female_name_most_similar, orient="index")
+        male_name_df = pd.DataFrame.from_dict(self.male_name_most_similar, orient="index")
+
+        print(woman_df, '\n')
+        print(man_df, '\n')
+        print(female_name_df, '\n')
+        print(male_name_df, '\n')
 
     def run(self):
         # Tokenize and lemmatize corpus
@@ -176,37 +209,7 @@ class Model:
         self.plot_data("Occurrences with relative frequency")
 
         ## Word Embeddings
-        training_data = self.generate_training_data()
-        self.model = Word2Vec(training_data, sg=1)
-        
-        self.woman_most_similar = self.get_most_similar(self.woman_dict)
-        self.man_most_similar = self.get_most_similar(self.man_dict)
-
-        woman_df = pd.DataFrame.from_dict(self.woman_most_similar, orient="index")
-        man_df = pd.DataFrame.from_dict(self.man_most_similar, orient="index")
-
-        # Visualize Word Embeddings
-        X = self.model.wv.vectors
-        pca = PCA(n_components=2)
-        result = pca.fit_transform(X)
-        words = list(self.model.wv.index_to_key)
-
-        self.visualize_words(result, words)
-
-        # Named Entity Recognition
-        self.get_names()
-        self.get_gender_names()
-
-        self.female_names_most_similar = self.get_most_similar(self.female_names)
-        self.male_names_most_similar = self.get_most_similar(self.male_names)
-
-        female_name_df = pd.DataFrame.from_dict(self.female_names_most_similar, orient="index")
-        male_names_df = pd.DataFrame.from_dict(self.male_names_most_similar, orient="index")
-
-        print(woman_df, '\n')
-        print(man_df, '\n')
-        print(female_name_df, '\n')
-        print(male_names_df, '\n')
+        self.word_embeddings()
 
 
         
