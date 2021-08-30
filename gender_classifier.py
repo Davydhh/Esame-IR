@@ -44,10 +44,3 @@ for model_name, model in models.items():
     pickle.dump(model, open(filename, 'wb'))
 
 print("The best classifier is {}".format(max(accuracy, key=accuracy.get)))
-
-
-
-
-
-
-

@@ -210,14 +210,3 @@ class Model:
 
         ## Word Embeddings
         self.word_embeddings()
-
-
-        
-
-
-
-
-
-
-
-

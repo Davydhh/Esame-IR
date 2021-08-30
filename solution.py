@@ -39,25 +39,3 @@ for d in data:
     data = list(collection.find(sort=[("year", 1)]))
     model = Model(d["documents"])
     model.word_embeddings()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
