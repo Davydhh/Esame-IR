@@ -76,7 +76,7 @@ class Model:
         plt.plot(self.woman_occurrences.keys(), self.man_occurrences.values())
         plt.xlabel("years")
         plt.ylabel("occurrences")
-        plt.title("Man and Womand")
+        plt.title("Man and Woman")
         plt.subplot(224)
         plt.plot(self.woman_occurrences.keys(), self.ratios, color="purple")
         plt.xlabel("years")
@@ -109,14 +109,15 @@ class Model:
         for k, v in dictionary.items():
             if v[0] in words:
                 index = self.model.wv.get_index(v[0])
-                plt.scatter(result[index, 0], result[index, 1], c="b", marker=',')
+                p1 = plt.scatter(result[index, 0], result[index, 1], c="b", marker=',')
                 plt.annotate(v[0], xy=(result[index, 0], result[index, 1]))
             if k in words:
                 index = self.model.wv.get_index(k)
-                plt.scatter(result[index, 0], result[index, 1], s=80, c='r')
+                p2 = plt.scatter(result[index, 0], result[index, 1], s=80, c='r')
                 plt.annotate(k, xy=(result[index, 0], result[index, 1]))
         plt.suptitle(suptitle)
         plt.title(title)
+        plt.legend((p1, p2), ("most similar", "word"), loc='upper left', fontsize=8)
 
     def visualize_words(self, result, words):
         plt.figure().tight_layout()
@@ -138,12 +139,12 @@ class Model:
         self.names = names
 
     def get_gender_names(self):
-        df = pd.read_csv("NationalNames.csv").drop(["Id", "Year", "Count"], axis=1)
+        df = pd.read_csv("dataset\\NationalNames.csv").drop(["Id", "Year", "Count"], axis=1)
 
         x = df["Name"]
         cv = CountVectorizer().fit(x)
 
-        gender_model = pickle.load(open("Multinomial Naive Bayes.sav", 'rb'))
+        gender_model = pickle.load(open("models\\Multinomial Naive Bayes.sav", 'rb'))
 
         prediction = gender_model.predict(cv.transform(self.names).toarray())
 
